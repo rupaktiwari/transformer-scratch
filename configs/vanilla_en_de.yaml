@@ -1,0 +1,42 @@
+# Vaswani et al. 2017 encoder–decoder.
+# Paper width is d_model 512, 6+6 layers, d_ff 2048, 8 heads, warmup 4000.
+# The numbers below fit a Colab GPU. Raise them if you have the memory.
+experiment: vanilla_en_de
+wandb_project: transformer-scratch
+seed: 42
+
+data:
+  dir: data/en-de
+  max_len: 128
+  batch_size: 32
+  num_workers: 0
+
+model:
+  arch: vanilla
+  d_model: 256
+  n_heads: 8
+  n_enc_layers: 4
+  n_dec_layers: 4
+  d_ff: 1024
+  dropout: 0.1
+
+train:
+  max_steps: 8000
+  warmup_steps: 1000
+  schedule: vaswani
+  lr: 0.0003
+  min_lr: 0.00003
+  label_smoothing: 0.1
+  weight_decay: 0.0
+  grad_clip: 1.0
+  amp: true
+  log_every: 50
+  eval_every: 1000
+  eval_sentences: 64
+  save_dir: checkpoints/vanilla_en_de
+
+decode:
+  strategy: greedy
+  beam_size: 4
+  length_penalty: 0.6
+  max_new_tokens: 128

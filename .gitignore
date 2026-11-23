@@ -1,0 +1,12 @@
+.venv/
+.uv-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+data/
+checkpoints/
+*.spm
+wandb/
+.comet-cache/
+nltk_data/

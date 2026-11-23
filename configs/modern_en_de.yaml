@@ -1,0 +1,46 @@
+# Decoder-only stack: Pre-RMSNorm, RoPE, GQA, QK-norm, SwiGLU experts, top-2 MoE.
+# Each token uses 2 of 4 experts, so the parameter count is higher than the
+# vanilla model while the work per token stays in the same range.
+experiment: modern_en_de
+wandb_project: transformer-scratch
+seed: 42
+
+data:
+  dir: data/en-de
+  max_len: 128
+  batch_size: 16
+  num_workers: 0
+
+model:
+  arch: modern
+  d_model: 256
+  n_layers: 6
+  n_heads: 8
+  n_kv_heads: 2
+  d_ff: 512
+  dropout: 0.1
+  n_experts: 4
+  top_k: 2
+  aux_coef: 0.01
+  z_loss_coef: 0.001
+
+train:
+  max_steps: 8000
+  warmup_steps: 500
+  schedule: cosine
+  lr: 0.0003
+  min_lr: 0.00003
+  label_smoothing: 0.0
+  weight_decay: 0.1
+  grad_clip: 1.0
+  amp: true
+  log_every: 50
+  eval_every: 1000
+  eval_sentences: 64
+  save_dir: checkpoints/modern_en_de
+
+decode:
+  strategy: greedy
+  beam_size: 4
+  length_penalty: 0.6
+  max_new_tokens: 128

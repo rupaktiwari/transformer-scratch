@@ -1,0 +1,26 @@
+[project]
+name = "transformer-scratch"
+version = "0.1.0"
+description = "Vaswani and modern transformers from scratch for English–German translation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.2",
+    "sentencepiece>=0.2.0",
+    "sacrebleu>=2.4.0",
+    "nltk>=3.8",
+    "pyyaml>=6.0",
+    "datasets>=2.18.0",
+    "tqdm>=4.66",
+    "wandb>=0.17",
+    "unbabel-comet>=2.2.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
