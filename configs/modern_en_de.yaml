@@ -25,7 +25,7 @@ model:
   z_loss_coef: 0.001
 
 train:
-  max_steps: 8000
+  max_steps: 16000
   warmup_steps: 500
   schedule: cosine
   lr: 0.0003
