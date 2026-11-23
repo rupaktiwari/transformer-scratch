@@ -32,7 +32,6 @@ train:
   amp: true
   log_every: 50
   eval_every: 1000
-  eval_sentences: 64
   save_dir: checkpoints/vanilla_en_de
 
 decode:

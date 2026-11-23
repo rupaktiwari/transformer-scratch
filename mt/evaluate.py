@@ -16,7 +16,6 @@ from mt.metrics import perplexity, translation_scores
 from mt.hub import publish_to_hub
 from mt.modeling import build_model
 from mt.tokenizer_utils import load_sentencepiece, read_meta
-from mt.tracking import Tracker
 
 
 def generate(model, rows, config, meta, processor, device) -> tuple[list[str], list[str], list[str]]:
@@ -59,8 +58,7 @@ def main() -> None:
     parser.add_argument("--split", default="test", choices=["valid", "test"])
     parser.add_argument("--limit", type=int, default=0, help="Evaluate only the first N sentences. 0 means all.")
     parser.add_argument("--data-dir", default=None, help="Override data.dir. Use the same Drive folder as training.")
-    parser.add_argument("--skip-comet", action="store_true")
-    parser.add_argument("--no-wandb", action="store_true")
+    parser.add_argument("--skip-comet", action="store_true", help="Kept so older notebooks still run. COMET is off.")
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -104,16 +102,11 @@ def main() -> None:
         hypotheses,
         references,
         perplexity=ppl,
-        use_comet=not args.skip_comet,
+        use_comet=False,
         device=device,
     )
     out = Path(args.checkpoint).with_suffix(f".{args.split}.metrics.json")
     out.write_text(json.dumps(scores, indent=2), encoding="utf-8")
-    eval_config = dict(config)
-    eval_config["experiment"] = f"{config['experiment']}-{args.split}"
-    tracker = Tracker(eval_config, enabled=not args.no_wandb)
-    tracker.log({f"test/{name}": value for name, value in scores.items()}, step=0)
-    tracker.finish()
     training_run = Path(args.checkpoint).parent / "wandb_run.url"
     if training_run.is_file():
         publish_to_hub(config, training_run.read_text(encoding="utf-8").strip(), scores, args.checkpoint)

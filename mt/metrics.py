@@ -48,7 +48,7 @@ def translation_scores(
     references: list[str],
     perplexity: float | None = None,
     use_meteor: bool = True,
-    use_comet: bool = True,
+    use_comet: bool = False,
     device: torch.device | None = None,
 ) -> dict:
     bleu = sacrebleu.corpus_bleu(hypotheses, [references])

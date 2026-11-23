@@ -14,7 +14,7 @@ from mt.config import load_config
 from mt.data import make_loader, read_tsv
 from mt.decode import greedy_modern, greedy_vanilla, ids_to_text
 from mt.loss import token_loss
-from mt.metrics import translation_scores
+from mt.metrics import perplexity, translation_scores
 from mt.hub import publish_to_hub
 from mt.modeling import build_model, count_parameters
 from mt.schedules import cosine_lr, vaswani_lr
@@ -76,31 +76,19 @@ def optimizer_for(model, config: dict):
 
 
 @torch.inference_mode()
-def validation_loss(model, loader, arch: str, smoothing: float, device: torch.device) -> float:
-    model.eval()
-    total = 0.0
-    count = 0
-    for batch in loader:
-        loss, _, _ = batch_loss(model, move(batch, device), arch, smoothing)
-        total += loss.item()
-        count += 1
-    model.train()
-    return total / max(count, 1)
-
-
-@torch.inference_mode()
-def sample_bleu(model, config: dict, meta: dict, processor, device: torch.device) -> float:
+def validation_metrics(model, config: dict, meta: dict, processor, device: torch.device) -> dict:
+    """Score the whole validation file. Nothing here is the test set."""
     rows = read_tsv(Path(config["data"]["dir"]) / "valid.tsv")
-    rows = rows[: config["train"]["eval_sentences"]]
     arch = config["model"]["arch"]
     pad_id = meta["pad_id"]
     max_len = config["decode"]["max_new_tokens"]
+    batch_size = config["data"]["batch_size"]
     sources, hypotheses, references = [], [], []
     special = {meta["pad_id"], meta["bos_id"], meta["eos_id"], meta["sep_id"]}
     model.eval()
-    for start in range(0, len(rows), 8):
-        chunk = rows[start : start + 8]
-        src_ids = [processor.encode(src, out_type=int)[: config["data"]["max_len"] - 2] for src, _ in chunk]
+    for start in range(0, len(rows), batch_size):
+        chunk = rows[start : start + batch_size]
+        src_ids = [processor.encode(src, out_type=int)[: config["data"]["max_len"] - 2] or [meta["unk_id"]] for src, _ in chunk]
         width = max(len(ids) for ids in src_ids)
         src = torch.full((len(chunk), width), pad_id, dtype=torch.long, device=device)
         for row, ids in enumerate(src_ids):
@@ -113,9 +101,9 @@ def sample_bleu(model, config: dict, meta: dict, processor, device: torch.device
             sources.append(source)
             references.append(reference)
             hypotheses.append(ids_to_text(processor, ids, meta["eos_id"], special))
-    scores = translation_scores(sources, hypotheses, references, use_meteor=False, use_comet=False)
+    scores = translation_scores(sources, hypotheses, references, use_meteor=True, use_comet=False)
     model.train()
-    return scores["bleu"]
+    return scores
 
 
 def save_checkpoint(path: Path, model, optimizer, scaler, step: int, config: dict) -> None:
@@ -217,13 +205,24 @@ def main() -> None:
                     step=step,
                 )
             if step % config["train"]["eval_every"] == 0:
-                val = validation_loss(model, valid_loader, config["model"]["arch"], config["train"]["label_smoothing"], device)
-                bleu = sample_bleu(model, config, meta, processor, device)
-                print(f"step {step}  valid_loss {val:.4f}  valid_bleu {bleu:.2f}")
-                tracker.log({"valid/loss": val, "valid/bleu": bleu}, step=step)
+                ppl = perplexity(model, valid_loader, config["model"]["arch"], device)
+                scores = validation_metrics(model, config, meta, processor, device)
+                print(
+                    f"step {step}  valid_perplexity {ppl:.2f}  valid_bleu {scores['bleu']:.2f}  "
+                    f"valid_chrfpp {scores['chrfpp']:.2f}  valid_meteor {scores['meteor']:.4f}"
+                )
+                tracker.log(
+                    {
+                        "valid/perplexity": ppl,
+                        "valid/bleu": scores["bleu"],
+                        "valid/chrfpp": scores["chrfpp"],
+                        "valid/meteor": scores["meteor"],
+                    },
+                    step=step,
+                )
                 save_checkpoint(save_dir / "last.pt", model, optimizer, scaler, step, config)
-                if val < best:
-                    best = val
+                if ppl < best:
+                    best = ppl
                     save_checkpoint(save_dir / "best.pt", model, optimizer, scaler, step, config)
                     print(f"saved {save_dir / 'best.pt'}")
             if step >= config["train"]["max_steps"]:
