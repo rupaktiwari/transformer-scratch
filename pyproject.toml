@@ -13,6 +13,7 @@ dependencies = [
     "datasets>=2.18.0",
     "tqdm>=4.66",
     "wandb>=0.17",
+    "huggingface_hub>=0.23",
     "unbabel-comet>=2.2.0",
 ]
 

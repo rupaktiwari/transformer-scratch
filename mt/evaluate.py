@@ -13,6 +13,7 @@ from mt.config import load_config
 from mt.data import make_loader, read_tsv
 from mt.decode import beam_modern, beam_vanilla, greedy_modern, greedy_vanilla, ids_to_text
 from mt.metrics import perplexity, translation_scores
+from mt.hub import publish_to_hub
 from mt.modeling import build_model
 from mt.tokenizer_utils import load_sentencepiece, read_meta
 from mt.tracking import Tracker
@@ -113,6 +114,9 @@ def main() -> None:
     tracker = Tracker(eval_config, enabled=not args.no_wandb)
     tracker.log({f"test/{name}": value for name, value in scores.items()}, step=0)
     tracker.finish()
+    training_run = Path(args.checkpoint).parent / "wandb_run.url"
+    if training_run.is_file():
+        publish_to_hub(config, training_run.read_text(encoding="utf-8").strip(), scores, args.checkpoint)
     for name, value in scores.items():
         print(f"{name}: {value:.4f}")
     print(f"wrote {out}")

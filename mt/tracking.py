@@ -20,6 +20,11 @@ class Tracker:
         if self.run is not None:
             self._wandb.log(metrics, step=step)
 
+    def url(self) -> str:
+        if self.run is None:
+            return ""
+        return self.run.url
+
     def finish(self) -> None:
         if self.run is not None:
             self.run.finish()

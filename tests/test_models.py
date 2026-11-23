@@ -163,9 +163,9 @@ def test_one_step_on_each_architecture(tmp_path, monkeypatch):
 
 def test_metric_names_without_heavy_models():
     scores = translation_scores(
-        ["the cat"],
-        ["the cat"],
-        ["the cat"],
+        ["the cat sat on the mat"],
+        ["the cat sat on the mat"],
+        ["the cat sat on the mat"],
         perplexity=10.0,
         use_meteor=False,
         use_comet=False,

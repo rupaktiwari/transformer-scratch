@@ -15,6 +15,7 @@ from mt.data import make_loader, read_tsv
 from mt.decode import greedy_modern, greedy_vanilla, ids_to_text
 from mt.loss import token_loss
 from mt.metrics import translation_scores
+from mt.hub import publish_to_hub
 from mt.modeling import build_model, count_parameters
 from mt.schedules import cosine_lr, vaswani_lr
 from mt.tokenizer_utils import load_sentencepiece, read_meta, special_ids
@@ -159,6 +160,11 @@ def main() -> None:
     print(f"{config['experiment']}: {n_params:,} trainable parameters on {device}")
     tracker = Tracker(config, enabled=not args.no_wandb)
     tracker.log({"parameters": n_params}, step=0)
+    save_dir = Path(config["train"]["save_dir"])
+    save_dir.mkdir(parents=True, exist_ok=True)
+    if tracker.url():
+        (save_dir / "wandb_run.url").write_text(tracker.url() + "\n", encoding="utf-8")
+        publish_to_hub(config, tracker.url())
 
     train_loader = make_loader(
         data_dir / "train.tsv",
@@ -186,7 +192,6 @@ def main() -> None:
     # Touch special_ids so a bad SentencePiece model fails before step 1.
     special_ids(processor)
 
-    save_dir = Path(config["train"]["save_dir"])
     best = float("inf")
     step = 0
     model.train()

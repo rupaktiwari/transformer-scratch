@@ -34,12 +34,12 @@ Train the two models in two sessions. They share the Drive corpus and one Weight
 
 1. Push is already at [rupaktiwari/transformer-scratch](https://github.com/rupaktiwari/transformer-scratch).
 2. Colab → **T4 GPU**.
-3. Upload or open `notebooks/train_vanilla.ipynb`. Run it from top to bottom. The login cell asks for your Wandb API key once.
+3. Upload or open `notebooks/train_vanilla.ipynb`. Paste your Weights & Biases API key and your Hugging Face write token into the token cell, then run the notebook from top to bottom. Do not push the notebook after the tokens are filled in.
 4. When that run is finished, open `notebooks/train_modern.ipynb` the same way. If the Drive folder already has `meta.json`, it reuses the data.
 
 Each notebook clones the repo, installs `requirements-colab.txt` on top of Colab's PyTorch, and writes checkpoints to `MyDrive/transformer-scratch`. Do not run `uv sync` on Colab.
 
-In the Wandb project `transformer-scratch` the runs are `vanilla_en_de` and `modern_en_de`. Both log `train/loss`, `train/lr`, `valid/loss`, and `valid/bleu`, so the charts can be overlaid. The modern run also logs `train/aux`, the mixture-of-experts penalty. Final BLEU, chrF, chrF++, METEOR, COMET, and perplexity are logged by the evaluation cell.
+In the Wandb project `transformer-scratch` the runs are `vanilla_en_de` and `modern_en_de`. Both log `train/loss`, `train/lr`, `valid/loss`, and `valid/bleu`, so the charts can be overlaid. The modern run also logs `train/aux`, the mixture-of-experts penalty. Each notebook also creates a Hugging Face model page for `wandererupak` and puts the live chart link on that page. Final BLEU, chrF, chrF++, METEOR, COMET, and perplexity are added to the page by the evaluation cell.
 
 If the modern run runs out of memory, rerun that cell with `--batch-size 8`. COMET is installed only in the evaluation cell.
 
