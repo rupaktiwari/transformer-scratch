@@ -41,7 +41,7 @@ def wmt_rows(train_samples: int) -> tuple[list[tuple[str, str]], list[tuple[str,
     from datasets import load_dataset
 
     def take(split: str, limit: int | None) -> list[tuple[str, str]]:
-        dataset = load_dataset("wmt14", "de-en", split=split)
+        dataset = load_dataset("wmt/wmt14", "de-en", split=split)
         rows = []
         for example in dataset:
             src = example["translation"]["en"].strip()
